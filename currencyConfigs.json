@@ -1,0 +1,22 @@
+{
+  "XRP": {
+    "limits": {
+      "tolerancePct": 0.8,
+      "minTouches": 3,
+      "pivotWindow": 1,
+      "showSupports": true,
+      "showResistances": true,
+      "showLongSetups": true,
+      "showVolume": true
+    },
+    "longs": {
+      "supportProximityPct": 0.25,
+      "rejectionThreshold": 0.5,
+      "minRR": 1.8,
+      "stopBufferPct": 0.15,
+      "confirmationMode": "conservative",
+      "requirePullback": true,
+      "pullbackLookback": 6
+    }
+  }
+}
