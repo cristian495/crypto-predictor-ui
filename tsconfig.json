@@ -19,6 +19,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["src", "components", "lib", "vite.config.ts"],
+  "include": ["src", "components", "lib", "app", "vite.config.ts"],
   "exclude": ["node_modules"]
 }

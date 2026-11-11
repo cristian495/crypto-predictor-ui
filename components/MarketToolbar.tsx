@@ -28,7 +28,7 @@ type MarketToolbarProps = {
   maxLimit?: number;
 };
 
-const QUICK_LIMITS = [50, 100, 200, 500];
+const QUICK_LIMITS = [50, 100, 200, 500, 1000];
 
 function getStatusBadge(status: ToolbarStatus): { text: string; className: string } {
   if (status === 'loading') {

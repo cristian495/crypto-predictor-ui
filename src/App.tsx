@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ChartPanel } from '@/components/ChartPanel';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { LongSetupsPanel } from '@/components/LongSetupsPanel';
@@ -270,6 +271,15 @@ export default function App() {
 
   return (
     <main className="mx-auto w-full max-w-[1650px] p-4 md:p-6">
+      <section className="mb-4 flex justify-end">
+        <Link
+          to="/strategies/buy-the-dip"
+          className="inline-flex items-center rounded-lg border border-sky-400/70 bg-sky-500/15 px-3 py-1.5 text-xs font-medium text-sky-200 transition hover:border-sky-300 hover:bg-sky-500/25"
+        >
+          Ir a Estrategia Buy-the-Dip
+        </Link>
+      </section>
+
       <MarketToolbar
         symbol={selectedSymbol}
         timeframe={selectedTimeframe}
@@ -300,7 +310,7 @@ export default function App() {
         }}
       />
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="grid grid-cols-1 gap-4">
         <section className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/40 p-3 md:p-4">
           <ChartPanel
             candles={candles}
@@ -320,7 +330,7 @@ export default function App() {
           />
         </section>
 
-        <aside className="flex min-h-0 flex-col gap-4 xl:max-h-[calc(100vh-3.5rem)] xl:overflow-y-auto">
+        <aside className="flex min-h-0 flex-col gap-4">
           <section className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-slate-100">Configuración Detector</h2>

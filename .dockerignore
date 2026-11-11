@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+.env.local
+.git
+.DS_Store
+*.tsbuildinfo
+public/data/buy_the_dip/*.json
+public/data/buy_the_dip/*.jsonl
