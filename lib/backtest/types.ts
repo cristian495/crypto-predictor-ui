@@ -217,6 +217,40 @@ export type PortfolioSymbolContribution = {
   winRatePct: number;
 };
 
+export type LiveResolvedSignal = {
+  symbol: string;
+  barTimestamp: string;
+  entryPrice: number;
+  exitPrice: number;
+  exitReason: string;
+  pnlPct: number;
+  durationBars?: number;
+  leverage?: number;
+  win: boolean;
+};
+
+export type LiveRun = {
+  /** Nº de señales resueltas (con resultado real). */
+  resolved: number;
+  /** Nº de señales aún abiertas (no maduraron). */
+  open: number;
+  winRatePct: number;
+  profitFactor: number;
+  avgPnlPct: number;
+  totalPnlPct: number;
+  byExitReason?: Record<string, number>;
+  bySymbol?: Record<string, { trades: number; wins: number; pnlPct: number; winRatePct: number }>;
+  /** Comparativa vivo-vs-backtest (null si falta el backtest de referencia). */
+  liveVsBacktest?: {
+    backtestWinRatePct: number;
+    liveWinRatePct: number;
+    backtestProfitFactor: number;
+    liveProfitFactor: number;
+  } | null;
+  /** Señales resueltas individuales (de live_results.jsonl), más recientes primero. */
+  results: LiveResolvedSignal[];
+};
+
 export type PortfolioRun = {
   runId: string;
   generatedAt: string;

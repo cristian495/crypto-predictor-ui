@@ -5,6 +5,7 @@ export type BacktestTabKey =
   | 'backtest-chart'
   | 'current-signal'
   | 'portfolio'
+  | 'live'
   | 'walkforward'
   | 'configuration';
 
@@ -13,6 +14,7 @@ type BacktestTabsProps = {
   onChangeTab: (tab: BacktestTabKey) => void;
   hasWalkForwardData: boolean;
   hasPortfolioData: boolean;
+  hasLiveData: boolean;
 };
 
 type TabOption = {
@@ -26,11 +28,18 @@ const TAB_OPTIONS: TabOption[] = [
   { key: 'backtest-chart', label: 'Backtest Chart' },
   { key: 'current-signal', label: 'Señal Actual' },
   { key: 'portfolio', label: 'Cartera' },
+  { key: 'live', label: 'En vivo' },
   { key: 'walkforward', label: 'Walkforward' },
   { key: 'configuration', label: 'Configuración' },
 ];
 
-export function BacktestTabs({ selectedTab, onChangeTab, hasWalkForwardData, hasPortfolioData }: BacktestTabsProps) {
+export function BacktestTabs({
+  selectedTab,
+  onChangeTab,
+  hasWalkForwardData,
+  hasPortfolioData,
+  hasLiveData,
+}: BacktestTabsProps) {
   return (
     <section className="rounded-xl border border-slate-800 bg-slate-900/70 p-3">
       <div className="flex flex-wrap gap-2">
@@ -38,8 +47,11 @@ export function BacktestTabs({ selectedTab, onChangeTab, hasWalkForwardData, has
           const isSelected = tab.key === selectedTab;
           const isWalkForward = tab.key === 'walkforward';
           const isPortfolio = tab.key === 'portfolio';
+          const isLive = tab.key === 'live';
           const statusLabel =
-            (isWalkForward && !hasWalkForwardData) || (isPortfolio && !hasPortfolioData)
+            (isWalkForward && !hasWalkForwardData) ||
+            (isPortfolio && !hasPortfolioData) ||
+            (isLive && !hasLiveData)
               ? 'sin datos'
               : null;
 

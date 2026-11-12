@@ -6,12 +6,15 @@ import {
 import { mockStrategyRunData, mockWalkForwardRunData } from '@/lib/backtest/mockData';
 import {
   backtestArtifactSchema,
+  liveResultSchema,
+  liveSummarySchema,
   portfolioArtifactSchema,
   signalsArtifactSchema,
   walkforwardArtifactSchema,
   type BacktestArtifactWire,
   type BacktestSymbolResultWire,
   type CurrentSignalWire,
+  type LiveSummaryWire,
   type PortfolioArtifactWire,
   type SignalsArtifactWire,
   type WalkforwardArtifactWire,
@@ -22,6 +25,8 @@ import type {
   CurrentSignalSnapshot,
   DataSource,
   HistoricalSignal,
+  LiveResolvedSignal,
+  LiveRun,
   PortfolioRun,
   StrategyConfigSummary,
   StrategyRun,
@@ -42,6 +47,7 @@ export type BuyTheDipPageData = {
   strategyRunData: StrategyRun;
   walkForwardData?: WalkForwardRun;
   portfolioData?: PortfolioRun;
+  liveData?: LiveRun;
   configSnapshot: BuyTheDipConfigSnapshot;
   message?: string;
   dataBaseUrl?: string;
@@ -351,6 +357,59 @@ function adaptPortfolioRun(raw: PortfolioArtifactWire): PortfolioRun {
   };
 }
 
+function adaptLiveRun(summary: LiveSummaryWire, results: LiveResolvedSignal[]): LiveRun {
+  const bySymbol = summary.bySymbol
+    ? Object.entries(summary.bySymbol).reduce<LiveRun['bySymbol']>((acc, [sym, v]) => {
+        acc![sym] = { trades: v.trades, wins: v.wins, pnlPct: v.pnl_pct, winRatePct: v.win_rate };
+        return acc;
+      }, {})
+    : undefined;
+
+  return {
+    resolved: summary.resolved,
+    open: summary.open,
+    winRatePct: summary.winRatePct,
+    profitFactor: summary.profitFactor,
+    avgPnlPct: summary.avgPnlPct,
+    totalPnlPct: summary.totalPnlPct,
+    byExitReason: summary.byExitReason,
+    bySymbol,
+    liveVsBacktest: summary.liveVsBacktest ?? null,
+    results,
+  };
+}
+
+/** Parsea live_results.jsonl (una señal resuelta por línea). Tolera líneas corruptas. */
+function parseLiveResults(text: string): LiveResolvedSignal[] {
+  const out: LiveResolvedSignal[] = [];
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    try {
+      const parsed = liveResultSchema.safeParse(JSON.parse(trimmed));
+      if (parsed.success) {
+        const r = parsed.data;
+        out.push({
+          symbol: r.symbol,
+          barTimestamp: r.bar_timestamp,
+          entryPrice: r.entry_price,
+          exitPrice: r.exit_price,
+          exitReason: r.exit_reason,
+          pnlPct: r.pnl_pct,
+          durationBars: r.duration_bars,
+          leverage: r.leverage,
+          win: r.win,
+        });
+      }
+    } catch {
+      // línea corrupta: la saltamos
+    }
+  }
+  // Más recientes primero (por timestamp de la vela de entrada).
+  out.sort((a, b) => (a.barTimestamp < b.barTimestamp ? 1 : -1));
+  return out;
+}
+
 function adaptWalkForwardRun(raw: WalkforwardArtifactWire): WalkForwardRun {
   return {
     runId: raw.runId,
@@ -410,18 +469,33 @@ async function fetchArtifact(url: string, required: boolean): Promise<unknown | 
   return response.json();
 }
 
+/** Fetch de texto plano (para .jsonl). Devuelve undefined si no existe (404). */
+async function fetchText(url: string): Promise<string | undefined> {
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) {
+    if (response.status === 404) return undefined;
+    throw new Error(`Failed to fetch ${url} (${response.status} ${response.statusText})`);
+  }
+  return response.text();
+}
+
 async function loadFromJson(baseUrl: string): Promise<Omit<BuyTheDipPageData, 'requestedMode' | 'resolvedMode'>> {
   const backtestUrl = joinUrl(baseUrl, 'backtest.latest.json');
   const signalsUrl = joinUrl(baseUrl, 'signals.latest.json');
   const walkforwardUrl = joinUrl(baseUrl, 'walkforward.latest.json');
   const portfolioUrl = joinUrl(baseUrl, 'portfolio.latest.json');
+  const liveSummaryUrl = joinUrl(baseUrl, 'live_summary.json');
+  const liveResultsUrl = joinUrl(baseUrl, 'live_results.jsonl');
 
-  const [backtestPayload, signalsPayload, walkforwardPayload, portfolioPayload] = await Promise.all([
-    fetchArtifact(backtestUrl, true),
-    fetchArtifact(signalsUrl, true),
-    fetchArtifact(walkforwardUrl, false),
-    fetchArtifact(portfolioUrl, false),
-  ]);
+  const [backtestPayload, signalsPayload, walkforwardPayload, portfolioPayload, liveSummaryPayload, liveResultsText] =
+    await Promise.all([
+      fetchArtifact(backtestUrl, true),
+      fetchArtifact(signalsUrl, true),
+      fetchArtifact(walkforwardUrl, false),
+      fetchArtifact(portfolioUrl, false),
+      fetchArtifact(liveSummaryUrl, false),
+      fetchText(liveResultsUrl),
+    ]);
 
   const backtest = parseArtifact(backtestArtifactSchema, backtestPayload, 'backtest.latest.json');
   const signals = parseArtifact(signalsArtifactSchema, signalsPayload, 'signals.latest.json');
@@ -431,6 +505,13 @@ async function loadFromJson(baseUrl: string): Promise<Omit<BuyTheDipPageData, 'r
   const portfolio = portfolioPayload
     ? parseArtifact(portfolioArtifactSchema, portfolioPayload, 'portfolio.latest.json')
     : undefined;
+
+  // Live: ambos opcionales (404 = aún sin datos). El summary manda; los results enriquecen.
+  const liveResults = liveResultsText ? parseLiveResults(liveResultsText) : [];
+  const liveSummary = liveSummaryPayload
+    ? parseArtifact(liveSummarySchema, liveSummaryPayload, 'live_summary.json')
+    : undefined;
+  const liveData = liveSummary ? adaptLiveRun(liveSummary, liveResults) : undefined;
 
   const warnings: string[] = [];
   if (signals.runId !== backtest.runId) {
@@ -446,6 +527,7 @@ async function loadFromJson(baseUrl: string): Promise<Omit<BuyTheDipPageData, 'r
     strategyRunData,
     walkForwardData: walkforward ? adaptWalkForwardRun(walkforward) : undefined,
     portfolioData: portfolio ? adaptPortfolioRun(portfolio) : undefined,
+    liveData,
     configSnapshot,
     message: warnings.length
       ? `JSON cargado con advertencias: ${warnings.join(' | ')}.`

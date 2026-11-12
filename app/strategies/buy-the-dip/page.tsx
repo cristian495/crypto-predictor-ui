@@ -5,6 +5,7 @@ import { BacktestCandlesChart } from '@/components/backtest/BacktestCandlesChart
 import { BacktestStatsCards } from '@/components/backtest/BacktestStatsCards';
 import { FuturesRealityPanel } from '@/components/backtest/FuturesRealityPanel';
 import { PortfolioPanel } from '@/components/backtest/PortfolioPanel';
+import { LiveSignalsPanel } from '@/components/backtest/LiveSignalsPanel';
 import { BacktestSummaryTable } from '@/components/backtest/BacktestSummaryTable';
 import { CurrentSignalChart } from '@/components/backtest/CurrentSignalChart';
 import { CurrentSignalPanel } from '@/components/backtest/CurrentSignalPanel';
@@ -21,12 +22,13 @@ import {
 } from '@/lib/backtest/configTooltips';
 import { loadBuyTheDipPageData } from '@/lib/backtest/dataLoader';
 import { mockStrategyRunData, mockWalkForwardRunData } from '@/lib/backtest/mockData';
-import type { PortfolioRun, StrategyRun, WalkForwardRun } from '@/lib/backtest/types';
+import type { LiveRun, PortfolioRun, StrategyRun, WalkForwardRun } from '@/lib/backtest/types';
 
 export default function BuyTheDipPage() {
   const [strategyRunData, setStrategyRunData] = useState<StrategyRun>(mockStrategyRunData);
   const [walkForwardData, setWalkForwardData] = useState<WalkForwardRun | undefined>(mockWalkForwardRunData);
   const [portfolioData, setPortfolioData] = useState<PortfolioRun | undefined>(undefined);
+  const [liveData, setLiveData] = useState<LiveRun | undefined>(undefined);
   const [configSnapshot, setConfigSnapshot] = useState<BuyTheDipConfigSnapshot>(BUY_THE_DIP_CONFIG_SNAPSHOT);
   const [activeDataMode, setActiveDataMode] = useState<'mock' | 'json'>('mock');
   const [dataMessage, setDataMessage] = useState<string | null>(null);
@@ -76,6 +78,7 @@ export default function BuyTheDipPage() {
 
   const hasWalkForwardData = selectedWalkForward?.status === 'available';
   const hasPortfolioData = portfolioData?.status === 'available';
+  const hasLiveData = Boolean(liveData && (liveData.resolved > 0 || liveData.open > 0));
   const selectedTrade =
     selectedBacktest?.trades.find((trade) => trade.id === selectedTradeId) ?? null;
   const selectedSegments = selectedWalkForward?.segments ?? [];
@@ -94,6 +97,7 @@ export default function BuyTheDipPage() {
         setStrategyRunData(payload.strategyRunData);
         setWalkForwardData(payload.walkForwardData);
         setPortfolioData(payload.portfolioData);
+        setLiveData(payload.liveData);
         setConfigSnapshot(payload.configSnapshot);
         setActiveDataMode(payload.resolvedMode);
         setDataMessage(payload.message ?? null);
@@ -164,6 +168,7 @@ export default function BuyTheDipPage() {
         onChangeTab={setSelectedTab}
         hasWalkForwardData={Boolean(hasWalkForwardData)}
         hasPortfolioData={Boolean(hasPortfolioData)}
+        hasLiveData={hasLiveData}
       />
 
       <section
@@ -182,7 +187,7 @@ export default function BuyTheDipPage() {
       </section>
 
       <section className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-        {selectedBacktest || selectedTab === 'portfolio' ? null : (
+        {selectedBacktest || selectedTab === 'portfolio' || selectedTab === 'live' ? null : (
           <div className="rounded-lg border border-dashed border-slate-700 bg-slate-950/40 p-4 text-sm text-slate-400">
             No hay resultado disponible para el símbolo seleccionado.
           </div>
@@ -256,6 +261,15 @@ export default function BuyTheDipPage() {
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-slate-100">Cartera (capital compartido)</h2>
             <PortfolioPanel portfolio={portfolioData} />
+          </div>
+        ) : null}
+
+        {selectedTab === 'live' ? (
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-slate-100">
+              Validación en vivo (paper trading)
+            </h2>
+            <LiveSignalsPanel live={liveData} />
           </div>
         ) : null}
 

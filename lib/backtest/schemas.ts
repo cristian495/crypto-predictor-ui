@@ -345,9 +345,60 @@ export const portfolioArtifactSchema = z
   })
   .passthrough();
 
+// ── Live paper-trading (generado por resolve_signals.py) ──────────────────────
+const liveBySymbolSchema = z
+  .object({
+    trades: z.number(),
+    wins: z.number(),
+    pnl_pct: z.number(),
+    win_rate: z.number(),
+  })
+  .passthrough();
+
+export const liveSummarySchema = z
+  .object({
+    resolved: z.number(),
+    open: z.number(),
+    winRatePct: z.number(),
+    profitFactor: z.number(),
+    avgPnlPct: z.number(),
+    totalPnlPct: z.number(),
+    byExitReason: z.record(z.string(), z.number()).optional(),
+    bySymbol: z.record(z.string(), liveBySymbolSchema).optional(),
+    liveVsBacktest: z
+      .object({
+        backtestWinRatePct: z.number(),
+        liveWinRatePct: z.number(),
+        backtestProfitFactor: z.number(),
+        liveProfitFactor: z.number(),
+      })
+      .passthrough()
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
+
+// Una línea de live_results.jsonl (señal resuelta).
+export const liveResultSchema = z
+  .object({
+    status: z.string().optional(),
+    symbol: z.string(),
+    bar_timestamp: z.string(),
+    entry_price: z.number(),
+    exit_price: z.number(),
+    exit_reason: z.string(),
+    pnl_pct: z.number(),
+    duration_bars: z.number().optional(),
+    leverage: z.number().optional(),
+    win: z.boolean(),
+  })
+  .passthrough();
+
 export type SignalsArtifactWire = z.infer<typeof signalsArtifactSchema>;
 export type BacktestArtifactWire = z.infer<typeof backtestArtifactSchema>;
 export type PortfolioArtifactWire = z.infer<typeof portfolioArtifactSchema>;
+export type LiveSummaryWire = z.infer<typeof liveSummarySchema>;
+export type LiveResultWire = z.infer<typeof liveResultSchema>;
 export type WalkforwardArtifactWire = z.infer<typeof walkforwardArtifactSchema>;
 export type BacktestSymbolResultWire = z.infer<typeof symbolBacktestResultSchema>;
 export type CurrentSignalWire = z.infer<typeof currentSignalSchema>;
