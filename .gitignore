@@ -14,6 +14,8 @@ dist/
 # Runtime data served to the UI (generado por el engine/worker, no versionar)
 public/data/buy_the_dip/*.json
 public/data/buy_the_dip/*.jsonl
+public/data/downtrend_breakout/*.json
+public/data/downtrend_breakout/*.jsonl
 
 # OS / editor
 .DS_Store

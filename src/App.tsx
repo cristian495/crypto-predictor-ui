@@ -271,12 +271,18 @@ export default function App() {
 
   return (
     <main className="mx-auto w-full max-w-[1650px] p-4 md:p-6">
-      <section className="mb-4 flex justify-end">
+      <section className="mb-4 flex justify-end gap-2">
         <Link
           to="/strategies/buy-the-dip"
           className="inline-flex items-center rounded-lg border border-sky-400/70 bg-sky-500/15 px-3 py-1.5 text-xs font-medium text-sky-200 transition hover:border-sky-300 hover:bg-sky-500/25"
         >
-          Ir a Estrategia Buy-the-Dip
+          Buy-the-Dip (LONG)
+        </Link>
+        <Link
+          to="/strategies/downtrend-breakout"
+          className="inline-flex items-center rounded-lg border border-rose-400/70 bg-rose-500/15 px-3 py-1.5 text-xs font-medium text-rose-200 transition hover:border-rose-300 hover:bg-rose-500/25"
+        >
+          Downtrend Breakout (SHORT)
         </Link>
       </section>
 
